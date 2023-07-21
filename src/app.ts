@@ -1,83 +1,41 @@
 import express, { Request, Response } from "express";
-import { google } from "googleapis";
 import dotenv from "dotenv";
+import { BetaAnalyticsDataClient } from "@google-analytics/data";
+
+const analyticsDataClient = new BetaAnalyticsDataClient({
+  keyFilename: "/home/phi/code/GG_anlytics/gamecenter-4745e-19d8c0731b0c.json",
+});
 
 dotenv.config();
 
 const app = express();
 const port = 3000;
-const scopes = "https://www.googleapis.com/auth/analytics.readonly";
-const view_id = "235279192";
-
-const jwt = new google.auth.JWT(
-  process.env.CLIENT_EMAIL,
-  null,
-  process.env.PRIVATE_KEY.replace(/\\n/g, "\n"),
-  scopes
-);
-
-// async function getTopPosts() {
-//   try {
-//     await jwt.authorize();
-
-//     const response = await google.analytics("v3").data.ga.get({
-//       auth: jwt,
-//       ids: "ga:" + view_id,
-//       "start-date": "2019-01-01",
-//       "end-date": "today",
-//       dimensions: "ga:pagePath,ga:pageTitle",
-//       metrics: "ga:pageviews",
-//       sort: "-ga:pageviews",
-//       "max-results": "10",
-//       filters: "ga:medium==organic",
-//     });
-
-//     console.log(response);
-//   } catch (err) {
-//     console.log(err);
-//   }
-// }
 
 app.get("/", async (req: Request, res: Response) => {
-  try {
-    const analyticsreporting = google.analyticsreporting({
-      version: "v4",
-      auth: jwt,
-    });
-
-    const response = await analyticsreporting.reports.batchGet({
-      requestBody: {
-        reportRequests: [
-          {
-            viewId: view_id,
-            dateRanges: [
-              {
-                startDate: "2023-01-01",
-                endDate: "2023-01-31",
-              },
-            ],
-            metrics: [
-              {
-                expression: "ga:sessions",
-              },
-              {
-                expression: "ga:admin",
-              },
-            ],
-            dimensions: [
-              {
-                name: "ga:date",
-              },
-            ],
-          },
-        ],
+  const [response] = await analyticsDataClient.runReport({
+    property: `properties/387721433`,
+    dateRanges: [
+      {
+        startDate: "2020-03-31",
+        endDate: "today",
       },
-    });
+    ],
+    dimensions: [
+      {
+        name: "city",
+      },
+    ],
+    metrics: [
+      {
+        name: "activeUsers",
+      },
+    ],
+  });
 
-    console.log(JSON.stringify(response.data, null, 2));
-  } catch (err) {
-    console.log(err);
-  }
+  console.log("Report result:");
+  response.rows.forEach((row) => {
+    console.log(row.dimensionValues[0].value, row.metricValues[0].value);
+  });
 });
 
 app.listen(port, () => {
