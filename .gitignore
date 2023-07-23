@@ -126,3 +126,4 @@ certs
 .vercel
 .env.local.beta
 .env.local.dev
+/dist
